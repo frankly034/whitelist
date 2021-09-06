@@ -93,3 +93,14 @@ describe("Whitelist routes", async () => {
       });
   });
 });
+
+describe("Protected route", async () => {
+  it("should return 403 error", () => {
+    chai
+      .request(app)
+      .get("/protected")
+      .end((err, res) => {
+        expect(res.status).to.equal(403);
+      });
+  });
+});
