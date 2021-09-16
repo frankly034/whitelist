@@ -6,7 +6,7 @@
   "scripts": {
     "start": "ts-node-dev src/index.ts",
     "coverage": "nyc npm run test && nyc report --reporter=text-lcov --reporter=lcov | node ./node_modules/coveralls/bin/coveralls.js --verbose",
-    "test": "nyc --reporter=lcov --reporter=text mocha -r ts-node/register src/**/*.spec.ts"
+    "test": "nyc --reporter=lcov --reporter=text mocha -r ts-node/register __tests__/**/*.spec.ts"
   },
   "nyc": {
     "include": [
