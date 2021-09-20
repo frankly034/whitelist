@@ -1,6 +1,9 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import path from "path";
+import YAML from "yamljs";
 
 import { errorHandler } from "./middlewares/error-handler";
 import { NotFoundError } from "./errors/not-found-error";
@@ -11,6 +14,9 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 app.set("trust proxy", true);
+
+const swaggerDocumentation = YAML.load(path.join(__dirname, "swagger.yaml"));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocumentation));
 
 // list all open routes
 app.use(whitelistRouter);
