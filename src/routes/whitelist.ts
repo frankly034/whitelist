@@ -34,7 +34,7 @@ router.post(
     whitelists[path] = { ips: Whitelist.ips, path };
 
     return res.status(200).send({
-      status: 200,
+      status: 201,
       data: whitelists[path],
     });
   }
