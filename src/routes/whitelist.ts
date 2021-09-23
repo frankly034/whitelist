@@ -4,9 +4,22 @@ import { whitelists } from "../db/whitelist";
 import { WhitelistModel } from "../models/whitelist";
 import { NotFoundError } from "../errors/not-found-error";
 import { validateRequest } from "../middlewares/validate-request";
-import { postValidatorObject } from "../helpers/validation";
+import { postValidatorObject, postValidatorBulkObject } from "../helpers/validation";
 
 const router = express.Router();
+
+const saveWhitelist = (path: string, ip: string[]) => {
+  const whitelist = whitelists[path];
+
+    let Whitelist: WhitelistModel = new WhitelistModel(path, ip);
+
+    if (whitelist) {
+      Whitelist = new WhitelistModel(path, whitelist.ips);
+      Whitelist.setIp(ip);
+    }
+
+    whitelists[path] = { ips: Whitelist.ips, path };
+}
 
 router.get("/whitelists", (req: Request, res: Response) => {
   return res.status(200).send({
@@ -22,16 +35,23 @@ router.post(
   (req: Request, res: Response) => {
     const { path, ip }: { path: string; ip: string } = req.body;
 
-    const whitelist = whitelists[path];
+    saveWhitelist(path, [ip]);
 
-    let Whitelist: WhitelistModel = new WhitelistModel(path, [ip]);
+    return res.status(200).send({
+      status: 200,
+      data: whitelists[path],
+    });
+  }
+);
 
-    if (whitelist) {
-      Whitelist = new WhitelistModel(path, whitelist.ips);
-      Whitelist.setIp([ip]);
-    }
+router.post(
+  "/whitelists/bulk",
+  postValidatorBulkObject,
+  validateRequest,
+  (req: Request, res: Response) => {
+    const { path, ips }: { path: string; ips: string[] } = req.body;
 
-    whitelists[path] = { ips: Whitelist.ips, path };
+    saveWhitelist(path, ips);
 
     return res.status(200).send({
       status: 201,
