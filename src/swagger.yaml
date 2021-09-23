@@ -123,6 +123,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /whitelists/bulk:
+    post:
+      summary: Whitelists a list of ips to a route
+      description: Returns a object of whitelisted route of ips.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhitelistBulkData'
+      responses:
+        '201':    # status code
+          description: Create a JSON object of the whitelisted route and ip
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data: 
+                    $ref: '#/components/schemas/Whitelist'
+        '400':
+          description: Validation error response
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     Error:
@@ -151,6 +179,15 @@ components:
       properties:
         ip:
           type: string
+        path:
+          type: string
+    WhitelistBulkData:
+      type: object
+      properties:
+        ips:
+          type: array
+          items: 
+            type: string
         path:
           type: string
 

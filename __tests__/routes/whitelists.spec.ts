@@ -1,20 +1,28 @@
 import chai from "chai";
 import chaiHttp from "chai-http";
+import sinon from "sinon";
 
-const { app } = require("../../src/app");
+import { app } from "../../src/app";
+import { validateRequest } from "../../src/middlewares/validate-request";
 
 chai.use(chaiHttp);
 const { expect } = chai;
 
+const data = {
+  ip: "127.0.0.1",
+  path: "/",
+};
+const newData = {
+  ip: "127.255.0.1",
+  path: "/",
+};
+
+const bulkData = {
+  ips: ["127.255.0.1", "127.255.0.2", "127.255.0.3"],
+  path: "/protected",
+};
+
 describe("Whitelist routes", async () => {
-  const data = {
-    ip: "127.0.0.1",
-    path: "/",
-  };
-  const newData = {
-    ip: "127.255.0.1",
-    path: "/",
-  };
   it("should return an array of whitelisted routes and ips", () => {
     chai
       .request(app)
@@ -31,8 +39,8 @@ describe("Whitelist routes", async () => {
       .send(data)
       .end((err, res) => {
         expect(err).to.be.null;
-        expect(res.body.data).to.have.property('path').equal(data.path);
-        expect(res.body.data).to.have.property('ips');
+        expect(res.body.data).to.have.property("path").equal(data.path);
+        expect(res.body.data).to.have.property("ips");
       });
   });
 
@@ -43,8 +51,8 @@ describe("Whitelist routes", async () => {
       .send(newData)
       .end((err, res) => {
         expect(err).to.be.null;
-        expect(res.body.data).to.have.property('path').equal(data.path);
-        expect(res.body.data).to.have.property('ips');
+        expect(res.body.data).to.have.property("path").equal(data.path);
+        expect(res.body.data).to.have.property("ips");
         expect(res.body.data.ips).to.include(newData.ip);
       });
   });
@@ -59,7 +67,32 @@ describe("Whitelist routes", async () => {
       })
       .end((err, res) => {
         expect(err).to.be.null;
-        expect(res.body).to.have.property('errors');
+        expect(res.body).to.have.property("errors");
+      });
+  });
+
+  it("should add a new list of whitelist ips to route --> bulk ips", () => {
+    chai
+      .request(app)
+      .post("/whitelists/bulk")
+      .send(bulkData)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res.body.data).to.have.property("path").equal(bulkData.path);
+        expect(res.body.data).to.have.property("ips");
+        expect(res.body.data.ips).to.include(bulkData.ips[0]);
+      });
+  });
+
+  it("should return a validation error on bulk route --> bulk ips", () => {
+    const {path, ...errorBulkData} = bulkData; 
+    chai
+      .request(app)
+      .post("/whitelists")
+      .send(errorBulkData)
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res.body).to.have.property("errors");
       });
   });
 
@@ -85,7 +118,7 @@ describe("Whitelist routes", async () => {
       })
       .end((err, res) => {
         expect(err).to.be.null;
-        expect(res.body).to.have.property('errors');
+        expect(res.body).to.have.property("errors");
       });
   });
 
@@ -123,6 +156,28 @@ describe("Protected route", async () => {
       .get("/protected")
       .end((err, res) => {
         expect(res.status).to.equal(403);
+      });
+  });
+
+  it("should return success message for protected route", () => {
+    chai
+      .request(app)
+      .post("/whitelists")
+      .send({
+        ip: "255.50.50.1",
+        path: "/protected",
+      })
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res.body.data).to.have.property("ips");
+      });
+
+    chai
+      .request(app)
+      .get("/protected")
+      .set("X-Forwarded-For", "255.50.50.1")
+      .end((err, res) => {
+        expect(res.status).to.equal(200);
       });
   });
 });
