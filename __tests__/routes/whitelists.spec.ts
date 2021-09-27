@@ -1,10 +1,9 @@
 import chai from "chai";
 import chaiHttp from "chai-http";
-import sinon from "sinon";
+import sinon, { SinonStub } from "sinon";
 
 import { app } from "../../src/app";
-import { validateRequest } from "../../src/middlewares/validate-request";
-
+import { saveObject } from "../../src/routes/whitelist";
 chai.use(chaiHttp);
 const { expect } = chai;
 
@@ -85,7 +84,7 @@ describe("Whitelist routes", async () => {
   });
 
   it("should return a validation error on bulk route --> bulk ips", () => {
-    const {path, ...errorBulkData} = bulkData; 
+    const { path, ...errorBulkData } = bulkData;
     chai
       .request(app)
       .post("/whitelists")
@@ -178,6 +177,29 @@ describe("Protected route", async () => {
       .set("X-Forwarded-For", "255.50.50.1")
       .end((err, res) => {
         expect(res.status).to.equal(200);
+      });
+  });
+});
+
+describe("Error 500", () => {
+  let stub: SinonStub;
+  before(() => {
+    stub = sinon.stub(saveObject, "saveWhitelist").throws(Error("Something went wrong"));
+  });
+  after(() => {
+    stub.restore();
+  });
+  it("should throw 500 error for internal error", async () => {
+    chai
+      .request(app)
+      .post("/whitelists")
+      .send({
+        ip: "127.0.0.1",
+        path: "/unknown",
+      })
+      .end((err, res) => {
+        expect(err).to.be.null;
+        expect(res.status).to.equal(500);
       });
   });
 });
